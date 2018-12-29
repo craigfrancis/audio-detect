@@ -1,0 +1,13 @@
+
+pip install --user matplotlib
+pip install --user librosa
+
+On MacOS 10.14, the pre-installed packages caused a problem with "six", this worked around it:
+
+	sudo pip install --ignore-installed six --upgrade --force-reinstall matplotlib
+
+--------------------------------------------------
+
+ffmpeg -ss 1.1 -i example-source/example-24.wav -t 0.7 -acodec copy -y example-output/sample-24.wav
+
+ffmpeg -i example-256.mp3 -ss 1.5 -t 0.7 -acodec libmp3lame -b:a 64k -y example-clip-64.mp3
