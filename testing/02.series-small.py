@@ -12,7 +12,7 @@ print('')
 print('Create source')
 print('')
 
-source_series = [0, 1, 2, 9, 6, 0, 0, 9, 9, 1, 3, 4, 5, 6, 9, 1, 3, 2, 1, 7, 4, 3, 2, 9, 1, 3, 4, 1, 1];
+source_series = [0, 1, 2, 9, 6, 0, 0, 9, 9, 1, 3, 4, 5, 6, 9, 1, 3, 2, 1, 7, 4, 3, 2, 9, 1, 3, 4, 1, 1]
 sample_series = [0, 0, 9, 1, 3, 4]
 
 #--------------------------------------------------
@@ -39,17 +39,17 @@ source_length = len(source_series)
 sample_matching = sample_start
 sample_length = (len(sample_series) - sample_start)
 
-x = 0;
+x = 0
 while x < source_length:
 
     match = (source_series[x] == sample_series[sample_matching])
 
-    print('  {} / {} ... {} == {} ({})'.format(x, sample_matching, source_series[x], sample_series[sample_matching], ('Y' if match else '-')));
+    print('  {} / {} ... {} == {} ({})'.format(x, sample_matching, source_series[x], sample_series[sample_matching], ('Y' if match else '-')))
 
     if match:
 
         if source_start == -1:
-            source_start = x;
+            source_start = x
 
         if sample_matching > sample_length:
             print('')

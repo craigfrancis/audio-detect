@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 if len(sys.argv) == 2:
     sample_id = sys.argv[1]
 else:
-    print('Missing Sample ID');
+    print('Missing Sample ID')
     sys.exit()
 
 source_path = './source-256.mp3'
@@ -56,8 +56,8 @@ sample_series, sample_rate = librosa.load(sample_path)
 
 # print('Round series')
 #
-# source_series = numpy.around(source_series, decimals=5);
-# sample_series = numpy.around(sample_series, decimals=5);
+# source_series = numpy.around(source_series, decimals=5)
+# sample_series = numpy.around(sample_series, decimals=5)
 
 #--------------------------------------------------
 
@@ -110,13 +110,13 @@ source_length = len(source_series)
 sample_matching = sample_start
 sample_length = (len(sample_series) - sample_start)
 
-x = 0;
+x = 0
 while x < source_length:
 
     if source_series[x] == sample_series[sample_matching]:
 
         if source_start == -1:
-            source_start = x;
+            source_start = x
 
         if sample_matching > sample_length:
             print('')
