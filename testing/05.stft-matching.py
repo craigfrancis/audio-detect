@@ -1,5 +1,16 @@
 #--------------------------------------------------
-# Basic matching... kind of works, but very slow
+# Basic matching... kind of works, but very slow.
+#
+#  python 05.stft-matching.py 1a
+#    FOUND @ 1.63989499419
+#    FOUND @ 5.41600718434
+#    FOUND @ 7.89471572423
+#
+#  python 05.stft-matching.py 2a
+#    FOUND @ 1.60216289698
+#    FOUND @ 5.37827508713
+#    FOUND @ 7.85698362702
+#
 #--------------------------------------------------
 
 import sys
@@ -9,9 +20,6 @@ import librosa
 import os
 import glob
 import subprocess
-
-import librosa.display
-import matplotlib.pyplot as plt
 
 #--------------------------------------------------
 
@@ -99,7 +107,26 @@ sample_length = (sample_length - sample_start)
 print('Matching requirements')
 
 hz_diff_match = 0.005
-hz_match_min = int(sample_height * 0.70) # x% of 1025
+hz_match_min = int(sample_height * 0.70) # i.e. "x% of 1025"
+
+    #--------------------------------------------------
+    # Comparing the sample to the source, by checking the 1025
+    # frequency buckets for each frame.
+    #
+    # If the difference requirement was set to no more than 0.005,
+    # then the total for each frame, for these three samples, got
+    # between 718 and 895 matches.
+    #
+    # Which is why the min matches is set to 718/1025 = 0.700
+    #
+    # Changing the match requirements does the following:
+    #
+    #   0.0100 needs to use 0.701 (719 to 873) with 2594 resets, taking 1:27, +1 false positive
+    #   0.0050 needs to use 0.700 (718 to 895) with  194 resets, taking 0:20, first false positive at 670.
+    #   0.0010 needs to use 0.620 (640 to 889) with   55 resets, taking 0:15, first false positive at 593.
+    #   0.0005 needs to use 0.509 (522 to 853) with   98 resets, taking 0:20, first false positive at 518.
+    #
+    #--------------------------------------------------
 
 print('')
 print('  Diff Match: {}'.format(hz_diff_match))
@@ -109,10 +136,15 @@ print('')
 #--------------------------------------------------
 
 print('Process series')
+print('')
 
 source_start = -1
 sample_matching = sample_start
 sample_matches_counts = []
+reset_count = 0
+match_count = 0
+match_min = None
+match_max = None
 
 x = 0
 while x < source_length:
@@ -134,13 +166,33 @@ while x < source_length:
         sample_matches_counts.append(hz_matched)
 
         if sample_matching > sample_length:
+
+            start_time = (source_start * source_timing)
+
+            match_counts_min = min(sample_matches_counts)
+            match_counts_max = max(sample_matches_counts)
+
+            if match_min == None or match_min > match_counts_min:
+                match_min = match_counts_min
+
+            if match_max == None or match_max < match_counts_max:
+                match_max = match_counts_max
+
             print('')
-            print('    FOUND @ {}'.format(source_start * source_timing))
-            print(sample_matches_counts)
+            print('    FOUND @ {}'.format(start_time))
+            print('      Min: {}'.format(match_counts_min))
+            print('      Max: {}'.format(match_counts_max))
+            # print(sample_matches_counts)
             print('')
+
+            subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-ss', str(start_time), '-i', source_path, '-t', str(sample_length * source_timing), ('05.stft-matching/%03d-%f.mp3' % (match_count, start_time))])
+
             sample_matching = sample_start
             source_start = -1
+            match_count += 1
+
         else:
+
             sample_matching += 1
 
     elif sample_matching > sample_start:
@@ -151,7 +203,16 @@ while x < source_length:
         x = source_start
         source_start = -1
 
+        reset_count += 1
+
     x += 1
+
+print('')
+print('  Reset count: {}'.format(reset_count))
+print('  Match count: {}'.format(match_count))
+print('  Match min: {}'.format(match_min))
+print('  Match max: {}'.format(match_max))
+print('')
 
 #--------------------------------------------------
 
