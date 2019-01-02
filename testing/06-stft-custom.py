@@ -32,18 +32,6 @@ source_path = './source-256.mp3'
 
 #--------------------------------------------------
 
-matches_path = './06-stft-custom'
-
-if os.path.exists(matches_path):
-    files = glob.glob(matches_path + '/*')
-    for f in files:
-        os.remove(f)
-else:
-    print('Missing matches folder')
-    sys.exit()
-
-#--------------------------------------------------
-
 print('Load Source')
 
 source_series, source_rate = librosa.load(source_path)
@@ -56,10 +44,15 @@ source_time_total = (float(len(source_series)) / source_rate)
 
 print('Load Samples')
 
-sample_paths = ['./03.series-big/sample-1a.mp3']
+samples_folder = './06-stft-custom'
 samples = []
 
-for sample_path in sample_paths:
+if not os.path.exists(samples_folder):
+    print('Missing samples folder')
+    sys.exit()
+
+files = glob.glob(samples_folder + '/*')
+for sample_path in files:
 
     sample_series, sample_rate = librosa.load(sample_path)
 
@@ -87,6 +80,8 @@ for sample_path in sample_paths:
             sample_length,
             sample_data
         ])
+
+    print('  {} ({}/{})'.format(sample_path, sample_start, sample_length))
 
 #--------------------------------------------------
 # Get Window
@@ -182,7 +177,7 @@ for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 
             sample_x = (matching[matching_id][1] + 1)
 
             if sample_id in matching_complete:
-                # print('    Match {}: Duplicate Complete at {}'.format(matching_id, sample_x))
+                # print('    Match {}/{}: Duplicate Complete at {}'.format(sample_id, matching_id, sample_x))
                 del matching[matching_id]
                 continue;
 
@@ -196,15 +191,15 @@ for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 
 
             if hz_matched > hz_match_min:
                 if sample_x >= samples[sample_id][1]:
-                    print('    Match {}: Complete at {}'.format(matching_id, sample_x))
+                    print('    Match {}/{}: Complete at {}'.format(sample_id, matching_id, sample_x))
                     del matching[matching_id]
                     matches.append([sample_id, ((float(x + block_start - samples[sample_id][1]) * hop_length) / source_rate)])
                     matching_complete.append(sample_id)
                 else:
-                    # print('    Match {}: Update to {} via {}'.format(matching_id, sample_x, hz_matched))
+                    # print('    Match {}/{}: Update to {} via {}'.format(sample_id, matching_id, sample_x, hz_matched))
                     matching[matching_id][1] = sample_x
             else:
-                print('    Match {}: Failed at {} of {}'.format(matching_id, sample_x, samples[sample_id][1]))
+                print('    Match {}/{}: Failed at {} of {}'.format(sample_id, matching_id, sample_x, samples[sample_id][1]))
                 del matching[matching_id]
 
         for sample_id, sample_info in enumerate(samples):
