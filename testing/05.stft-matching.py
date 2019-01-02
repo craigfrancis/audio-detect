@@ -57,8 +57,13 @@ source_time_total = (float(len(source_series)) / source_rate)
 
 print('Parse data')
 
-source_data = abs(librosa.stft(source_series, hop_length=64))
-sample_data = abs(librosa.stft(sample_series, hop_length=64))
+# n_fft=2048
+# win_length = n_fft
+# hop_length = int(win_length // 4)
+hop_length = 64
+
+source_data = abs(librosa.stft(source_series, hop_length=hop_length))
+sample_data = abs(librosa.stft(sample_series, hop_length=hop_length))
 
 #--------------------------------------------------
 
