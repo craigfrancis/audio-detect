@@ -160,6 +160,7 @@ n_columns = int(MAX_MEM_BLOCK / (source_series_hz_count * dtype_size))
 # Processing
 
 print('Processing')
+print('  From 0 to {}'.format(source_series_frame_count))
 
 hz_diff_match = 0.005
 hz_match_min = int(source_series_hz_count * 0.70) # i.e. "x% of 1025"
