@@ -28,11 +28,20 @@ pad_mode='reflect'
 
 #--------------------------------------------------
 
-source_path = './source-256.mp3'
+if len(sys.argv) == 3:
+    source_path = sys.argv[1]
+    samples_folder = sys.argv[2]
+else:
+    source_path = './source-256.mp3'
+    samples_folder = './06-stft-custom'
 
 #--------------------------------------------------
 
 print('Load Source')
+
+if not os.path.exists(source_path):
+    print('Missing source file')
+    sys.exit()
 
 source_series, source_rate = librosa.load(source_path)
 
@@ -40,11 +49,12 @@ source_time_total = (float(len(source_series)) / source_rate)
 
 # source_data = abs(librosa.stft(source_series, n_fft=n_fft, hop_length=hop_length, win_length=win_length, window=window, dtype=dtype, pad_mode=pad_mode))
 
+print('  {} ({})'.format(source_path, source_time_total))
+
 #--------------------------------------------------
 
 print('Load Samples')
 
-samples_folder = './06-stft-custom'
 samples = []
 
 if not os.path.exists(samples_folder):
