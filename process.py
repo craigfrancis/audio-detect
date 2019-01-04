@@ -12,7 +12,7 @@ import os
 import glob
 import subprocess
 
-np.set_printoptions(threshold=np.nan)
+# np.set_printoptions(threshold=np.nan)
 
 MAX_MEM_BLOCK = 2**8 * 2**10
 
@@ -24,6 +24,21 @@ window = 'hann'
 dtype = np.complex64
 dtype_size = dtype(0).itemsize # 8 bytes
 pad_mode='reflect'
+
+#--------------------------------------------------
+
+def pcm_data(path, sample_rate):
+
+    pcm_path = os.path.splitext(source_path)[0] + '.pcm'
+
+    devnull = open(os.devnull)
+    proc = subprocess.call(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), pcm_path], stdout=devnull, stderr=devnull)
+    devnull.close()
+
+    scale = 1./float(1 << ((8 * 2) - 1))
+    y = scale * np.fromfile(pcm_path, '<i2').astype(np.float32)
+
+    return y
 
 #--------------------------------------------------
 
@@ -61,11 +76,13 @@ if not os.path.exists(source_path):
     print('Missing source file')
     sys.exit()
 
-source_series, source_rate = librosa.load(source_path)
+sample_rate = 22050
 
-source_time_total = (float(len(source_series)) / source_rate)
+source_series = pcm_data(source_path, sample_rate)
 
-print('  {} ({} & {})'.format(source_path, source_time_total, source_rate))
+source_time_total = (float(len(source_series)) / sample_rate)
+
+print('  {} ({} & {})'.format(source_path, source_time_total, sample_rate))
 
 #--------------------------------------------------
 
@@ -84,7 +101,7 @@ else:
 
 for sample_path in files:
 
-    sample_series, sample_rate = librosa.load(sample_path)
+    sample_series = pcm_data(sample_path, sample_rate)
 
     sample_data = abs(librosa.stft(sample_series, n_fft=n_fft, hop_length=hop_length, win_length=win_length, window=window, dtype=dtype, pad_mode=pad_mode))
 
@@ -185,7 +202,7 @@ if source_frame_end == None:
    source_frame_end = source_series_frame_count
 
 print('    From {} to {}'.format(source_frame_start, source_frame_end))
-print('    From {} to {}'.format(((float(source_frame_start) * hop_length) / source_rate), ((float(source_frame_end) * hop_length) / source_rate)))
+print('    From {} to {}'.format(((float(source_frame_start) * hop_length) / sample_rate), ((float(source_frame_end) * hop_length) / sample_rate)))
 
 matching = {}
 match_count = 0
@@ -197,7 +214,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
     set_data = abs((scipy.fftpack.fft(fft_window * source_series_frames[:, block_start:block_end], axis=0)).astype(dtype))
 
-    print('  {} to {} @ {}'.format(block_start, block_end, ((float(block_start) * hop_length) / source_rate)))
+    print('  {} to {} @ {}'.format(block_start, block_end, ((float(block_start) * hop_length) / sample_rate)))
 
     x = 0
     x_max = (block_end - block_start)
@@ -217,7 +234,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
             if hz_score < hz_min_score:
                 if sample_x >= samples[sample_id][1]:
-                    match_start_time = ((float(x + block_start - samples[sample_id][1]) * hop_length) / source_rate)
+                    match_start_time = ((float(x + block_start - samples[sample_id][1]) * hop_length) / sample_rate)
                     print('    Match {}/{}: Complete at {} @ {}'.format(matching_id, sample_id, sample_x, match_start_time))
                     del matching[matching_id]
                     matches.append([sample_id, match_start_time])
@@ -289,7 +306,7 @@ if meta_title != None:
     if last > 0:
         k += 1
         time = int(round(match[1] * 1000))
-        end = int(round(((float(source_frame_end) * hop_length) / source_rate) * 1000))
+        end = int(round(((float(source_frame_end) * hop_length) / sample_rate) * 1000))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
         f.write('START=' + str(time) + '\n')
