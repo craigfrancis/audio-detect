@@ -27,7 +27,7 @@ sample_rate = 22050
 def pcm_data(path, sample_rate):
 
     devnull = open(os.devnull)
-    proc = subprocess.Popen(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), '-'], stdout=subprocess.PIPE, stderr=devnull)
+    proc = subprocess.Popen(['ffmpeg', '-i', path, '-f', 's16le', '-ac', '1', '-ar', str(sample_rate), '-'], stdout=subprocess.PIPE, stderr=devnull)
     devnull.close()
 
     scale = 1./float(1 << ((8 * 2) - 1))
@@ -290,7 +290,12 @@ for match in matches:
     print(' {} = {} @ {}'.format(match[0], str(datetime.timedelta(seconds=match[1])), match[1]))
 
 if meta_title != None:
-    f = open(os.path.splitext(source_path)[0] + '.meta', 'w')
+
+    source_path_split = os.path.splitext(source_path)
+    meta_path = source_path_split[0] + '.meta'
+    chapter_path = source_path_split[0] + '-chapters' + source_path_split[1];
+
+    f = open(meta_path, 'w')
     f.write(';FFMETADATA1\n')
     f.write('title=' + meta_title + '\n')
     f.write('\n')
@@ -317,3 +322,7 @@ if meta_title != None:
         f.write('title=Chapter ' + str(k) + '\n')
         f.write('\n')
     f.close()
+
+    devnull = open(os.devnull)
+    proc = subprocess.Popen(['ffmpeg', '-i', source_path, '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdout=devnull, stderr=devnull)
+    devnull.close()
