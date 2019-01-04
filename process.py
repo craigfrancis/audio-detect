@@ -24,27 +24,16 @@ sample_rate = 22050
 
 #--------------------------------------------------
 
-def pcm_path_get(path):
-    return os.path.splitext(path)[0] + '.pcm'
-
 def pcm_data(path, sample_rate):
 
-    pcm_path = pcm_path_get(path)
-
-    if not os.path.exists(pcm_path):
-        devnull = open(os.devnull)
-        proc = subprocess.call(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), pcm_path], stdout=devnull, stderr=devnull)
-        devnull.close()
+    devnull = open(os.devnull)
+    proc = subprocess.Popen(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), '-'], stdout=subprocess.PIPE, stderr=devnull)
+    devnull.close()
 
     scale = 1./float(1 << ((8 * 2) - 1))
-    y = scale * np.fromfile(pcm_path, '<i2').astype(np.float32)
+    y = scale * np.frombuffer(proc.stdout.read(), '<i2').astype(np.float32)
 
     return y
-
-def pcm_cleanup(path):
-    pcm_path = pcm_path_get(path)
-    if os.path.exists(pcm_path):
-        os.remove(pcm_path)
 
 #--------------------------------------------------
 
@@ -169,9 +158,6 @@ else:
 
 for sample_path in files:
 
-    if sample_path[-4:] == '.pcm':
-        continue;
-
     sample_series = pcm_data(sample_path, sample_rate)
 
     sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
@@ -295,10 +281,6 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                     ]
 
         x += 1
-
-#--------------------------------------------------
-
-pcm_cleanup(source_path)
 
 #--------------------------------------------------
 
