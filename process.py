@@ -1,9 +1,6 @@
 #--------------------------------------------------
 # Process STFT data as it's being parsed
 # https://librosa.github.io/librosa/_modules/librosa/core/spectrum.html#stft
-# The main script no longer uses hz_matched, as
-# taking the average difference between the Hz
-# buckets proved to be faster and more accurate.
 #--------------------------------------------------
 
 import sys
@@ -15,8 +12,7 @@ import os
 import glob
 import subprocess
 
-
-# np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=np.nan)
 
 MAX_MEM_BLOCK = 2**8 * 2**10
 
@@ -31,12 +27,31 @@ pad_mode='reflect'
 
 #--------------------------------------------------
 
-if len(sys.argv) == 3:
+source_path = './testing/source-64.mp3'
+samples_folder = './testing/06-stft-custom/sample-1a.mp3'
+hz_min_score = 0.15
+meta_title = None
+source_frame_start = 0
+source_frame_end = None
+
+if len(sys.argv) >= 3:
     source_path = sys.argv[1]
     samples_folder = sys.argv[2]
-else:
-    source_path = './source-256.mp3'
-    samples_folder = './06-stft-custom'
+
+if len(sys.argv) >= 4:
+    hz_min_score = float(sys.argv[3])
+
+if len(sys.argv) >= 5:
+    meta_title = str(sys.argv[4])
+
+if len(sys.argv) >= 6:
+    source_frame_start = int(sys.argv[5])
+
+if len(sys.argv) >= 7:
+    source_frame_end = int(sys.argv[6])
+
+print('Config')
+print('  Hz Min Score: {}'.format(hz_min_score))
 
 #--------------------------------------------------
 
@@ -50,9 +65,7 @@ source_series, source_rate = librosa.load(source_path)
 
 source_time_total = (float(len(source_series)) / source_rate)
 
-# source_data = abs(librosa.stft(source_series, n_fft=n_fft, hop_length=hop_length, win_length=win_length, window=window, dtype=dtype, pad_mode=pad_mode))
-
-print('  {} ({})'.format(source_path, source_time_total))
+print('  {} ({} & {})'.format(source_path, source_time_total, source_rate))
 
 #--------------------------------------------------
 
@@ -64,7 +77,11 @@ if not os.path.exists(samples_folder):
     print('Missing samples folder')
     sys.exit()
 
-files = glob.glob(samples_folder + '/*')
+if os.path.isdir(samples_folder):
+    files = glob.glob(samples_folder + '/*')
+else:
+    files = [samples_folder]
+
 for sample_path in files:
 
     sample_series, sample_rate = librosa.load(sample_path)
@@ -84,9 +101,9 @@ for sample_path in files:
             sample_start = x
             break
         x += 1
-    sample_start += 2 # The first few frames seem to get modified, perhaps down to compression?
+    sample_start += 5 # The first few frames seem to get modified, perhaps down to compression?
 
-    sample_length = (sample_length - sample_start)
+    sample_length = (sample_length - sample_start - 2)
 
     samples.append([
             sample_start,
@@ -163,22 +180,24 @@ n_columns = int(MAX_MEM_BLOCK / (source_series_hz_count * dtype_size))
 # Processing
 
 print('Processing')
-print('  From 0 to {}'.format(source_series_frame_count))
 
-hz_diff_match = 0.005
-hz_match_min = int(source_series_hz_count * 0.70) # i.e. "x% of 1025"
+if source_frame_end == None:
+   source_frame_end = source_series_frame_count
+
+print('    From {} to {}'.format(source_frame_start, source_frame_end))
+print('    From {} to {}'.format(((float(source_frame_start) * hop_length) / source_rate), ((float(source_frame_end) * hop_length) / source_rate)))
 
 matching = {}
 match_count = 0
 matches = []
 
-for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 blocks
+for block_start in range(source_frame_start, source_frame_end, n_columns): # Time in 31 blocks
 
-    block_end = min(block_start + n_columns, source_series_frame_count)
+    block_end = min(block_start + n_columns, source_frame_end)
 
     set_data = abs((scipy.fftpack.fft(fft_window * source_series_frames[:, block_start:block_end], axis=0)).astype(dtype))
 
-    print('  {} to {}'.format(block_start, block_end))
+    print('  {} to {} @ {}'.format(block_start, block_end, ((float(block_start) * hop_length) / source_rate)))
 
     x = 0
     x_max = (block_end - block_start)
@@ -191,46 +210,49 @@ for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 
             sample_x = (matching[matching_id][1] + 1)
 
             if sample_id in matching_complete:
-                # print('    Match {}/{}: Duplicate Complete at {}'.format(sample_id, matching_id, sample_x))
-                del matching[matching_id]
-                continue;
+                continue
 
-            hz_matched = 0
-            for y in range(0, source_series_hz_count):
-                diff = set_data[y][x] - samples[sample_id][2][y][sample_x]
-                if diff < 0:
-                    diff = 0 - diff
-                if diff < hz_diff_match:
-                    hz_matched += 1
+            hz_score = abs(set_data[0:source_series_hz_count,x] - samples[sample_id][2][0:source_series_hz_count,sample_x])
+            hz_score = sum(hz_score)/float(len(hz_score))
 
-            if hz_matched > hz_match_min:
+            if hz_score < hz_min_score:
                 if sample_x >= samples[sample_id][1]:
-                    print('    Match {}/{}: Complete at {}'.format(sample_id, matching_id, sample_x))
+                    match_start_time = ((float(x + block_start - samples[sample_id][1]) * hop_length) / source_rate)
+                    print('    Match {}/{}: Complete at {} @ {}'.format(matching_id, sample_id, sample_x, match_start_time))
                     del matching[matching_id]
-                    matches.append([sample_id, ((float(x + block_start - samples[sample_id][1]) * hop_length) / source_rate)])
+                    matches.append([sample_id, match_start_time])
                     matching_complete.append(sample_id)
                 else:
-                    # print('    Match {}/{}: Update to {} via {}'.format(sample_id, matching_id, sample_x, hz_matched))
+                    print('    Match {}/{}: Update to {} ({} < {})'.format(matching_id, sample_id, sample_x, hz_score, hz_min_score))
                     matching[matching_id][1] = sample_x
             else:
-                print('    Match {}/{}: Failed at {} of {}'.format(sample_id, matching_id, sample_x, samples[sample_id][1]))
+                print('    Match {}/{}: Failed at {} of {} ({} > {})'.format(matching_id, sample_id, sample_x, samples[sample_id][1], hz_score, hz_min_score))
                 del matching[matching_id]
+
+        for sample_id in matching_complete:
+            for matching_id in list(matching):
+                if matching[matching_id][0] == sample_id:
+                    print('    Match {}/{}: Duplicate Complete at {}'.format(matching_id, sample_id, sample_x))
+                    del matching[matching_id] # Cannot be done in the first loop (next to continue), as the order in a dictionary is undefined, so you could have a match that started later, getting tested first.
 
         for sample_id, sample_info in enumerate(samples):
 
             sample_start = sample_info[0]
 
-            hz_matched = 0
-            for y in range(0, source_series_hz_count):
-                diff = set_data[y][x] - sample_info[2][y][sample_start]
-                if diff < 0:
-                    diff = 0 - diff
-                if diff < hz_diff_match:
-                    hz_matched += 1
+            # Correlation might work better, but I've not idea how to use it.
+            #   np.correlate(set_data[0:source_series_hz_count,x], sample_info[2][0:source_series_hz_count,sample_start])[0]
 
-            if hz_matched > hz_match_min:
+            # Return a list of Hz buckets for this frame (set_data);
+            # Subtract them all from the equivalent Hz bucket from sample frame 0;
+            # Convert to positive values (abs);
+            # Calculate the average variation, as a float (total/count).
+
+            hz_score = abs(set_data[0:source_series_hz_count,x] - sample_info[2][0:source_series_hz_count,sample_start])
+            hz_score = sum(hz_score)/float(len(hz_score))
+
+            if hz_score < hz_min_score:
                 match_count += 1
-                # print('   Start Match {}'.format(match_count))
+                print('    Match {}: Start for sample {} at {} ({} < {})'.format(match_count, sample_id, (x + block_start), hz_score, hz_min_score))
                 matching[match_count] = [
                         sample_id,
                         sample_start
@@ -238,16 +260,40 @@ for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 
 
         x += 1
 
-    # print('{} - {}'.format(block_start, block_end))
-    # for x in range(0, source_series_hz_count):
-    #     for y in range(0, (block_end - block_start)):
-    #         a = (set_data[x][y])
-    #         b = (source_data[x][block_start + y])
-    #         if a != b:
-    #             print(' {} x {} ... {} != {}'.format(x, y, a, b))
-
 #--------------------------------------------------
+
+import datetime
 
 print('')
 print('Matches')
-print(matches)
+for match in matches:
+    print(' {} = {} @ {}'.format(match[0], str(datetime.timedelta(seconds=match[1])), match[1]))
+
+if meta_title != None:
+    f = open(os.path.splitext(source_path)[0] + '.meta', 'w')
+    f.write(';FFMETADATA1\n')
+    f.write('title=' + meta_title + '\n')
+    f.write('\n')
+    k = 0
+    last = 0
+    for match in matches:
+        k += 1
+        time = int(round(match[1] * 1000))
+        f.write('[CHAPTER]\n')
+        f.write('TIMEBASE=1/1000\n')
+        f.write('START=' + str(last) + '\n')
+        f.write('END=' + str(time) + '\n')
+        f.write('title=Chapter ' + str(k) + '\n')
+        f.write('\n')
+        last = time
+    if last > 0:
+        k += 1
+        time = int(round(match[1] * 1000))
+        end = int(round(((float(source_frame_end) * hop_length) / source_rate) * 1000))
+        f.write('[CHAPTER]\n')
+        f.write('TIMEBASE=1/1000\n')
+        f.write('START=' + str(time) + '\n')
+        f.write('END=' + str(end) + '\n')
+        f.write('title=Chapter ' + str(k) + '\n')
+        f.write('\n')
+    f.close()
