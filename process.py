@@ -4,41 +4,111 @@
 #--------------------------------------------------
 
 import sys
-import numpy as np
-import librosa
-import scipy
-
 import os
 import glob
 import subprocess
+import numpy as np
+import scipy
+import scipy.signal
+import datetime
 
 # np.set_printoptions(threshold=np.nan)
 
-MAX_MEM_BLOCK = 2**8 * 2**10
-
+dtype = np.complex64
 n_fft=2048
+hz_count = int(1 + n_fft // 2) # 1025 (Hz buckets)
 win_length = n_fft
 hop_length = int(win_length // 4)
 # hop_length = 64
-window = 'hann'
-dtype = np.complex64
-dtype_size = dtype(0).itemsize # 8 bytes
-pad_mode='reflect'
+sample_rate = 22050
 
 #--------------------------------------------------
 
+def pcm_path_get(path):
+    return os.path.splitext(path)[0] + '.pcm'
+
 def pcm_data(path, sample_rate):
 
-    pcm_path = os.path.splitext(source_path)[0] + '.pcm'
+    pcm_path = pcm_path_get(path)
 
-    devnull = open(os.devnull)
-    proc = subprocess.call(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), pcm_path], stdout=devnull, stderr=devnull)
-    devnull.close()
+    if not os.path.exists(pcm_path):
+        devnull = open(os.devnull)
+        proc = subprocess.call(['ffmpeg', '-i', path, '-f', 's16le', '-y', '-ac', '1', '-ar', str(sample_rate), pcm_path], stdout=devnull, stderr=devnull)
+        devnull.close()
 
     scale = 1./float(1 << ((8 * 2) - 1))
     y = scale * np.fromfile(pcm_path, '<i2').astype(np.float32)
 
     return y
+
+def pcm_cleanup(path):
+    pcm_path = pcm_path_get(path)
+    if os.path.exists(pcm_path):
+        os.remove(pcm_path)
+
+#--------------------------------------------------
+
+def stft_raw(series, sample_rate, win_length, hop_length, hz_count, dtype):
+
+    #--------------------------------------------------
+    # Config
+
+    window = 'hann'
+    pad_mode='reflect'
+
+    #--------------------------------------------------
+    # Get Window
+
+    fft_window = scipy.signal.get_window(window, win_length, fftbins=True)
+
+    #--------------------------------------------------
+    # Pad the window out to n_fft size... Wrapper for
+    # np.pad to automatically centre an array prior to padding.
+
+    axis = -1
+
+    n = fft_window.shape[axis]
+
+    lpad = int((n_fft - n) // 2)
+
+    lengths = [(0, 0)] * fft_window.ndim
+    lengths[axis] = (lpad, int(n_fft - n - lpad))
+
+    if lpad < 0:
+        raise ParameterError(('Target size ({:d}) must be at least input size ({:d})').format(n_fft, n))
+
+    fft_window = np.pad(fft_window, lengths, mode='constant')
+
+    #--------------------------------------------------
+    # Reshape so that the window can be broadcast
+
+    fft_window = fft_window.reshape((-1, 1))
+
+    #--------------------------------------------------
+    # Pad the time series so that frames are centred
+
+    series = np.pad(series, int(n_fft // 2), mode=pad_mode)
+
+    #--------------------------------------------------
+    # Window the time series.
+
+        # Compute the number of frames that will fit. The end may get truncated.
+    n_frames = 1 + int((len(series) - n_fft) / hop_length) # Where n_fft = frame_length
+
+        # Vertical stride is one sample
+        # Horizontal stride is `hop_length` samples
+    series_frames = np.lib.stride_tricks.as_strided(series, shape=(n_fft, n_frames), strides=(series.itemsize, hop_length * series.itemsize))
+
+    #--------------------------------------------------
+    # how many columns can we fit within MAX_MEM_BLOCK
+
+    MAX_MEM_BLOCK = 2**8 * 2**10
+    n_columns = int(MAX_MEM_BLOCK / (hz_count * (dtype(0).itemsize)))
+
+    #--------------------------------------------------
+    # Return
+
+    return (series_frames, fft_window, n_columns)
 
 #--------------------------------------------------
 
@@ -76,8 +146,6 @@ if not os.path.exists(source_path):
     print('Missing source file')
     sys.exit()
 
-sample_rate = 22050
-
 source_series = pcm_data(source_path, sample_rate)
 
 source_time_total = (float(len(source_series)) / sample_rate)
@@ -101,9 +169,21 @@ else:
 
 for sample_path in files:
 
+    if sample_path[-4:] == '.pcm':
+        continue;
+
     sample_series = pcm_data(sample_path, sample_rate)
 
-    sample_data = abs(librosa.stft(sample_series, n_fft=n_fft, hop_length=hop_length, win_length=win_length, window=window, dtype=dtype, pad_mode=pad_mode))
+    sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
+
+    # Pre-allocate the STFT matrix
+    sample_data = np.empty((int(1 + n_fft // 2), sample_frames.shape[1]), dtype=dtype, order='F')
+
+    for bl_s in range(0, sample_data.shape[1], n_columns):
+        bl_t = min(bl_s + n_columns, sample_data.shape[1])
+        sample_data[:, bl_s:bl_t] = scipy.fftpack.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
+
+    sample_data = abs(sample_data)
 
     sample_height = sample_data.shape[0]
     sample_length = sample_data.shape[1]
@@ -131,75 +211,14 @@ for sample_path in files:
     print('  {} ({}/{})'.format(sample_path, sample_start, sample_length))
 
 #--------------------------------------------------
-# Get Window
-
-print('Get Window')
-
-fft_window = scipy.signal.get_window(window, win_length, fftbins=True)
-
-#--------------------------------------------------
-# Pad the window out to n_fft size... Wrapper for
-# np.pad to automatically centre an array prior to padding.
-
-print('Pad Window')
-
-axis = -1
-
-n = fft_window.shape[axis]
-
-lpad = int((n_fft - n) // 2)
-
-lengths = [(0, 0)] * fft_window.ndim
-lengths[axis] = (lpad, int(n_fft - n - lpad))
-
-if lpad < 0:
-    raise ParameterError(('Target size ({:d}) must be at least input size ({:d})').format(n_fft, n))
-
-fft_window = np.pad(fft_window, lengths, mode='constant')
-
-#--------------------------------------------------
-# Reshape so that the window can be broadcast
-
-print('Reshape Window')
-
-fft_window = fft_window.reshape((-1, 1))
-
-#--------------------------------------------------
-# Pad the time series so that frames are centred
-
-print('Pad time series')
-
-source_series = np.pad(source_series, int(n_fft // 2), mode=pad_mode)
-
-#--------------------------------------------------
-# Window the time series.
-
-print('Window time series')
-
-# Compute the number of frames that will fit. The end may get truncated.
-n_frames = 1 + int((len(source_series) - n_fft) / hop_length) # Where n_fft = frame_length
-
-# Vertical stride is one sample
-# Horizontal stride is `hop_length` samples
-source_series_frames = np.lib.stride_tricks.as_strided(source_series, shape=(n_fft, n_frames), strides=(source_series.itemsize, hop_length * source_series.itemsize))
-source_series_frame_count = source_series_frames.shape[1]
-
-source_series_hz_count = int(1 + n_fft // 2) # 1025 (Hz buckets)
-
-#--------------------------------------------------
-# how many columns can we fit within MAX_MEM_BLOCK?
-
-print('Columns')
-
-n_columns = int(MAX_MEM_BLOCK / (source_series_hz_count * dtype_size))
-
-#--------------------------------------------------
 # Processing
 
 print('Processing')
 
+source_frames, fft_window, n_columns = stft_raw(source_series, sample_rate, win_length, hop_length, hz_count, dtype)
+
 if source_frame_end == None:
-   source_frame_end = source_series_frame_count
+   source_frame_end = source_frames.shape[1]
 
 print('    From {} to {}'.format(source_frame_start, source_frame_end))
 print('    From {} to {}'.format(((float(source_frame_start) * hop_length) / sample_rate), ((float(source_frame_end) * hop_length) / sample_rate)))
@@ -212,7 +231,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
     block_end = min(block_start + n_columns, source_frame_end)
 
-    set_data = abs((scipy.fftpack.fft(fft_window * source_series_frames[:, block_start:block_end], axis=0)).astype(dtype))
+    set_data = abs((scipy.fftpack.fft(fft_window * source_frames[:, block_start:block_end], axis=0)).astype(dtype))
 
     print('  {} to {} @ {}'.format(block_start, block_end, ((float(block_start) * hop_length) / sample_rate)))
 
@@ -229,7 +248,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
             if sample_id in matching_complete:
                 continue
 
-            hz_score = abs(set_data[0:source_series_hz_count,x] - samples[sample_id][2][0:source_series_hz_count,sample_x])
+            hz_score = abs(set_data[0:hz_count,x] - samples[sample_id][2][0:hz_count,sample_x])
             hz_score = sum(hz_score)/float(len(hz_score))
 
             if hz_score < hz_min_score:
@@ -257,14 +276,14 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
             sample_start = sample_info[0]
 
             # Correlation might work better, but I've not idea how to use it.
-            #   np.correlate(set_data[0:source_series_hz_count,x], sample_info[2][0:source_series_hz_count,sample_start])[0]
+            #   np.correlate(set_data[0:hz_count,x], sample_info[2][0:hz_count,sample_start])[0]
 
             # Return a list of Hz buckets for this frame (set_data);
             # Subtract them all from the equivalent Hz bucket from sample frame 0;
             # Convert to positive values (abs);
             # Calculate the average variation, as a float (total/count).
 
-            hz_score = abs(set_data[0:source_series_hz_count,x] - sample_info[2][0:source_series_hz_count,sample_start])
+            hz_score = abs(set_data[0:hz_count,x] - sample_info[2][0:hz_count,sample_start])
             hz_score = sum(hz_score)/float(len(hz_score))
 
             if hz_score < hz_min_score:
@@ -279,7 +298,9 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
 #--------------------------------------------------
 
-import datetime
+pcm_cleanup(source_path)
+
+#--------------------------------------------------
 
 print('')
 print('Matches')
