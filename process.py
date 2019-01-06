@@ -262,11 +262,11 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
             sample_start = sample_info[0]
 
-            # Correlation might work better, but I've not idea how to use it.
+            # Correlation might work better, but I've no idea how to use it.
             #   np.correlate(set_data[0:hz_count,x], sample_info[3][0:hz_count,sample_start])[0]
 
-            # Return a list of Hz buckets for this frame (set_data),
-            # Subtract them all from the equivalent Hz bucket from sample frame 0,
+            # Return a list of Hz buckets for this frame (set_data[0-1025][x]),
+            # Subtract them all from the equivalent Hz bucket from sample_start (frame 0, ish)
             # Convert to positive values (abs),
             # Calculate the average variation, as a float (total/count).
 
