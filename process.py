@@ -119,10 +119,10 @@ if len(sys.argv) >= 5:
     meta_title = str(sys.argv[4])
 
 if len(sys.argv) >= 6:
-    source_frame_start = int(sys.argv[5])
+    source_frame_start = ((int(sys.argv[5]) * sample_rate) / hop_length)
 
 if len(sys.argv) >= 7:
-    source_frame_end = int(sys.argv[6])
+    source_frame_end = ((int(sys.argv[6]) * sample_rate) / hop_length)
 
 print('Config')
 print('  Hz Min Score: {}'.format(hz_min_score))
