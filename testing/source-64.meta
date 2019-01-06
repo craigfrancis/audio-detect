@@ -1,0 +1,39 @@
+;FFMETADATA1
+title=Testing
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END=2000
+title=Chapter 1
+#human-start=0:00:00
+#human-end=0:00:02
+#sample=sample-1a.mp3
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=2000
+END=5000
+title=Chapter 2
+#human-start=0:00:02
+#human-end=0:00:05
+#sample=sample-1a.mp3
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=5000
+END=8000
+title=Chapter 3
+#human-start=0:00:05
+#human-end=0:00:08
+#sample=sample-1a.mp3
+
+[CHAPTER]
+TIMEBASE=1/1000
+START=8000
+END=10000
+title=Chapter 4
+#human-start=0:00:08
+#human-end=0:00:10
+#sample=sample-1a.mp3
+

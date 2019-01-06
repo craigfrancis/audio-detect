@@ -191,6 +191,7 @@ for sample_path in files:
     samples.append([
             sample_start,
             sample_length,
+            os.path.basename(sample_path),
             sample_data
         ])
 
@@ -234,7 +235,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
             if sample_id in matching_complete:
                 continue
 
-            hz_score = abs(set_data[0:hz_count,x] - samples[sample_id][2][0:hz_count,sample_x])
+            hz_score = abs(set_data[0:hz_count,x] - samples[sample_id][3][0:hz_count,sample_x])
             hz_score = sum(hz_score)/float(len(hz_score))
 
             if hz_score < hz_min_score:
@@ -262,14 +263,14 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
             sample_start = sample_info[0]
 
             # Correlation might work better, but I've not idea how to use it.
-            #   np.correlate(set_data[0:hz_count,x], sample_info[2][0:hz_count,sample_start])[0]
+            #   np.correlate(set_data[0:hz_count,x], sample_info[3][0:hz_count,sample_start])[0]
 
-            # Return a list of Hz buckets for this frame (set_data);
-            # Subtract them all from the equivalent Hz bucket from sample frame 0;
-            # Convert to positive values (abs);
+            # Return a list of Hz buckets for this frame (set_data),
+            # Subtract them all from the equivalent Hz bucket from sample frame 0,
+            # Convert to positive values (abs),
             # Calculate the average variation, as a float (total/count).
 
-            hz_score = abs(set_data[0:hz_count,x] - sample_info[2][0:hz_count,sample_start])
+            hz_score = abs(set_data[0:hz_count,x] - sample_info[3][0:hz_count,sample_start])
             hz_score = sum(hz_score)/float(len(hz_score))
 
             if hz_score < hz_min_score:
@@ -293,7 +294,7 @@ if meta_title != None:
 
     source_path_split = os.path.splitext(source_path)
     meta_path = source_path_split[0] + '.meta'
-    chapter_path = source_path_split[0] + '-chapters' + source_path_split[1];
+    chapter_path = source_path_split[0] + '-chapters' + source_path_split[1]
 
     f = open(meta_path, 'w')
     f.write(';FFMETADATA1\n')
@@ -303,23 +304,29 @@ if meta_title != None:
     last = 0
     for match in matches:
         k += 1
-        time = int(round(match[1] * 1000))
+        time = int(round(match[1]))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(last) + '\n')
-        f.write('END=' + str(time) + '\n')
+        f.write('START=' + str(last * 1000) + '\n')
+        f.write('END=' + str(time * 1000) + '\n')
         f.write('title=Chapter ' + str(k) + '\n')
+        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last))) + '\n')
+        f.write('#human-end=' + str(str(datetime.timedelta(seconds=time))) + '\n')
+        f.write('#sample=' + str(samples[match[0]][2]) + '\n')
         f.write('\n')
         last = time
     if last > 0:
         k += 1
-        time = int(round(match[1] * 1000))
-        end = int(round(((float(source_frame_end) * hop_length) / sample_rate) * 1000))
+        time = int(round(match[1]))
+        end = int(round((float(source_frame_end) * hop_length) / sample_rate))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(time) + '\n')
-        f.write('END=' + str(end) + '\n')
+        f.write('START=' + str(time * 1000) + '\n')
+        f.write('END=' + str(end * 1000) + '\n')
         f.write('title=Chapter ' + str(k) + '\n')
+        f.write('#human-start=' + str(str(datetime.timedelta(seconds=time))) + '\n')
+        f.write('#human-end=' + str(str(datetime.timedelta(seconds=end))) + '\n')
+        f.write('#sample=' + str(samples[match[0]][2]) + '\n')
         f.write('\n')
     f.close()
 
