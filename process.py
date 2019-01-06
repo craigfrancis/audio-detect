@@ -331,5 +331,5 @@ if meta_title != None:
     f.close()
 
     devnull = open(os.devnull)
-    proc = subprocess.Popen(['ffmpeg', '-i', source_path, '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdout=devnull, stderr=devnull)
+    proc = subprocess.Popen(['ffmpeg', '-i', source_path, '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdin=devnull, stdout=devnull, stderr=devnull)
     devnull.close()
