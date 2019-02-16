@@ -22,6 +22,8 @@ hop_length = int(win_length // 4)
 # hop_length = 64
 sample_rate = 22050
 
+match_any_sample = True
+
 #--------------------------------------------------
 
 def pcm_data(path, sample_rate):
@@ -254,7 +256,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 
         for sample_id in matching_complete:
             for matching_id in list(matching):
-                if matching[matching_id][0] == sample_id:
+                if match_any_sample or matching[matching_id][0] == sample_id:
                     print('    Match {}/{}: Duplicate Complete at {}'.format(matching_id, sample_id, sample_x))
                     del matching[matching_id] # Cannot be done in the first loop (next to continue), as the order in a dictionary is undefined, so you could have a match that started later, getting tested first.
 
