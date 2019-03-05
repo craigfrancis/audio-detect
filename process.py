@@ -329,31 +329,33 @@ if meta_title != None:
     f.write('title=' + meta_title + '\n')
     f.write('\n')
     k = 0
-    last = 0
+    last_time = 0
+    last_sample = 'N/A'
     for match in matches:
         k += 1
-        time = int(round(match[1]))
+        end_time = int(round(match[1]))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(last * 1000) + '\n')
-        f.write('END=' + str(time * 1000) + '\n')
+        f.write('START=' + str(last_time * 1000) + '\n')
+        f.write('END=' + str(end_time * 1000) + '\n')
         f.write('title=Chapter ' + str(k) + '\n')
-        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last))) + '\n')
-        f.write('#human-end=' + str(str(datetime.timedelta(seconds=time))) + '\n')
-        f.write('#sample=' + str(samples[match[0]][2]) + '\n')
+        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last_time))) + '\n')
+        f.write('#human-end=' + str(str(datetime.timedelta(seconds=end_time))) + '\n')
+        f.write('#sample=' + str(last_sample) + '\n')
         f.write('\n')
-        last = time
-    if last > 0:
+        last_time = end_time
+        last_sample = samples[match[0]][2]
+    if last_time > 0:
         k += 1
-        time = int(round((float(source_frame_end) * hop_length) / sample_rate))
+        end_time = int(round((float(source_frame_end) * hop_length) / sample_rate))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(last * 1000) + '\n')
-        f.write('END=' + str(time * 1000) + '\n')
+        f.write('START=' + str(last_time * 1000) + '\n')
+        f.write('END=' + str(end_time * 1000) + '\n')
         f.write('title=Chapter ' + str(k) + '\n')
-        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last))) + '\n')
-        f.write('#human-end=' + str(str(datetime.timedelta(seconds=time))) + '\n')
-        f.write('#sample=N/A' + '\n')
+        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last_time))) + '\n')
+        f.write('#human-end=' + str(str(datetime.timedelta(seconds=end_time))) + '\n')
+        f.write('#sample=' + str(last_sample) + '\n')
         f.write('\n')
     f.close()
 
