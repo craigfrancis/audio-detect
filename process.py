@@ -216,11 +216,14 @@ matching = {}
 match_count = 0
 matches = []
 
-results = {}
+results_end = {}
+results_dupe = {}
 for sample_id, sample_info in enumerate(samples):
-    results[sample_id] = {}
+    results_end[sample_id] = {}
+    results_dupe[sample_id] = {}
     for k in range(0, (sample_info[1] + 1)):
-        results[sample_id][k] = 0
+        results_end[sample_id][k] = 0
+        results_dupe[sample_id][k] = 0
 
 for block_start in range(source_frame_start, source_frame_end, n_columns): # Time in 31 blocks
 
@@ -250,7 +253,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                 if sample_x >= samples[sample_id][1]:
                     match_start_time = ((float(x + block_start - samples[sample_id][1]) * hop_length) / sample_rate)
                     print('    Match {}/{}: Complete at {} @ {}'.format(matching_id, sample_id, sample_x, match_start_time))
-                    results[sample_id][sample_x] += 1
+                    results_end[sample_id][sample_x] += 1
                     del matching[matching_id]
                     matches.append([sample_id, match_start_time])
                     matching_complete.append(sample_id)
@@ -259,13 +262,16 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                     matching[matching_id][1] = sample_x
             else:
                 print('    Match {}/{}: Failed at {} of {} ({} > {})'.format(matching_id, sample_id, sample_x, samples[sample_id][1], hz_score, hz_min_score))
-                results[sample_id][sample_x] += 1
+                results_end[sample_id][sample_x] += 1
                 del matching[matching_id]
 
-        for sample_id in matching_complete:
+        for matching_sample_id in matching_complete:
             for matching_id in list(matching):
-                if match_any_sample or matching[matching_id][0] == sample_id:
+                if match_any_sample or matching[matching_id][0] == matching_sample_id:
+                    sample_id = matching[matching_id][0]
+                    sample_x = matching[matching_id][1]
                     print('    Match {}/{}: Duplicate Complete at {}'.format(matching_id, sample_id, sample_x))
+                    results_dupe[sample_id][sample_x] += 1
                     del matching[matching_id] # Cannot be done in the first loop (next to continue), as the order in a dictionary is undefined, so you could have a match that started later, getting tested first.
 
         for sample_id, sample_info in enumerate(samples):
@@ -309,12 +315,13 @@ if meta_title != None:
 
     f = open(results_path, 'w')
     for sample_id, sample_info in enumerate(samples):
-        f.write('  ' + str(sample_id) + ' / ' + str(sample_info[2]) + '\n')
         for k in range(0, (sample_info[1] + 1)):
-            if results[sample_id][k] > 0:
-                f.write('    ' + str(k) + ': ' + str(results[sample_id][k]) + '\n')
-            else:
-                f.write('    ' + str(k) + ':\n')
+            f.write('  ' + str(sample_id) + ' | ' + str(sample_info[2]) + ' | ' + str(k) + ':')
+            if results_end[sample_id][k] > 0 or results_dupe[sample_id][k] > 0:
+                f.write(' ' + str(results_end[sample_id][k]))
+                if results_dupe[sample_id][k] > 0:
+                    f.write(' (+' + str(results_dupe[sample_id][k]) + ')')
+            f.write('\n')
         f.write('\n')
 
     f = open(meta_path, 'w')
