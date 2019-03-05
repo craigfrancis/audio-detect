@@ -154,7 +154,7 @@ if not os.path.exists(samples_folder):
     sys.exit()
 
 if os.path.isdir(samples_folder):
-    files = glob.glob(samples_folder + '/*')
+    files = sorted(glob.glob(samples_folder + '/*'))
 else:
     files = [samples_folder]
 
@@ -216,6 +216,12 @@ matching = {}
 match_count = 0
 matches = []
 
+results = {}
+for sample_id, sample_info in enumerate(samples):
+    results[sample_id] = {}
+    for k in range(0, (sample_info[1] + 1)):
+        results[sample_id][k] = 0
+
 for block_start in range(source_frame_start, source_frame_end, n_columns): # Time in 31 blocks
 
     block_end = min(block_start + n_columns, source_frame_end)
@@ -244,6 +250,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                 if sample_x >= samples[sample_id][1]:
                     match_start_time = ((float(x + block_start - samples[sample_id][1]) * hop_length) / sample_rate)
                     print('    Match {}/{}: Complete at {} @ {}'.format(matching_id, sample_id, sample_x, match_start_time))
+                    results[sample_id][sample_x] += 1
                     del matching[matching_id]
                     matches.append([sample_id, match_start_time])
                     matching_complete.append(sample_id)
@@ -252,6 +259,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                     matching[matching_id][1] = sample_x
             else:
                 print('    Match {}/{}: Failed at {} of {} ({} > {})'.format(matching_id, sample_id, sample_x, samples[sample_id][1], hz_score, hz_min_score))
+                results[sample_id][sample_x] += 1
                 del matching[matching_id]
 
         for sample_id in matching_complete:
@@ -296,7 +304,17 @@ if meta_title != None:
 
     source_path_split = os.path.splitext(source_path)
     meta_path = source_path_split[0] + '.meta'
+    results_path = source_path_split[0] + '.results'
     chapter_path = source_path_split[0] + '-chapters' + source_path_split[1]
+
+    f = open(results_path, 'w')
+    for sample_id, sample_info in enumerate(samples):
+        f.write('  ' + str(sample_id) + ' / ' + str(sample_info[2]) + '\n')
+        for k in range(0, (sample_info[1] + 1)):
+            if results[sample_id][k] > 0:
+                f.write('    ' + str(k) + ': ' + str(results[sample_id][k]) + '\n')
+            else:
+                f.write('    ' + str(k) + ':\n')
 
     f = open(meta_path, 'w')
     f.write(';FFMETADATA1\n')
