@@ -315,6 +315,7 @@ if meta_title != None:
                 f.write('    ' + str(k) + ': ' + str(results[sample_id][k]) + '\n')
             else:
                 f.write('    ' + str(k) + ':\n')
+        f.write('\n')
 
     f = open(meta_path, 'w')
     f.write(';FFMETADATA1\n')
