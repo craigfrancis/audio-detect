@@ -337,16 +337,15 @@ if meta_title != None:
         last = time
     if last > 0:
         k += 1
-        time = int(round(match[1]))
-        end = int(round((float(source_frame_end) * hop_length) / sample_rate))
+        time = int(round((float(source_frame_end) * hop_length) / sample_rate))
         f.write('[CHAPTER]\n')
         f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(time * 1000) + '\n')
-        f.write('END=' + str(end * 1000) + '\n')
+        f.write('START=' + str(last * 1000) + '\n')
+        f.write('END=' + str(time * 1000) + '\n')
         f.write('title=Chapter ' + str(k) + '\n')
-        f.write('#human-start=' + str(str(datetime.timedelta(seconds=time))) + '\n')
-        f.write('#human-end=' + str(str(datetime.timedelta(seconds=end))) + '\n')
-        f.write('#sample=' + str(samples[match[0]][2]) + '\n')
+        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last))) + '\n')
+        f.write('#human-end=' + str(str(datetime.timedelta(seconds=time))) + '\n')
+        f.write('#sample=N/A' + '\n')
         f.write('\n')
     f.close()
 
