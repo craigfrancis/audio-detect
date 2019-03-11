@@ -118,13 +118,16 @@ if len(sys.argv) >= 4:
     hz_min_score = float(sys.argv[3])
 
 if len(sys.argv) >= 5:
-    meta_title = str(sys.argv[4])
+    meta_ignore = float(sys.argv[4]) # Ignore additional matches X seconds after the last one.
 
 if len(sys.argv) >= 6:
-    source_frame_start = ((int(sys.argv[5]) * sample_rate) / hop_length)
+    meta_title = str(sys.argv[5]) # Set a title to record meta data, and create "X-chapters.mp3"
 
 if len(sys.argv) >= 7:
-    source_frame_end = ((int(sys.argv[6]) * sample_rate) / hop_length)
+    source_frame_start = ((int(sys.argv[6]) * sample_rate) / hop_length)
+
+if len(sys.argv) >= 8:
+    source_frame_end = ((int(sys.argv[7]) * sample_rate) / hop_length)
 
 print('Config')
 print('  Hz Min Score: {}'.format(hz_min_score))
@@ -159,45 +162,46 @@ else:
     files = [samples_folder]
 
 for sample_path in files:
+    if os.path.isfile(sample_path):
 
-    sample_series = pcm_data(sample_path, sample_rate)
+        sample_series = pcm_data(sample_path, sample_rate)
 
-    sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
+        sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
 
-    # Pre-allocate the STFT matrix
-    sample_data = np.empty((int(1 + n_fft // 2), sample_frames.shape[1]), dtype=dtype, order='F')
+        # Pre-allocate the STFT matrix
+        sample_data = np.empty((int(1 + n_fft // 2), sample_frames.shape[1]), dtype=dtype, order='F')
 
-    for bl_s in range(0, sample_data.shape[1], n_columns):
-        bl_t = min(bl_s + n_columns, sample_data.shape[1])
-        sample_data[:, bl_s:bl_t] = scipy.fftpack.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
+        for bl_s in range(0, sample_data.shape[1], n_columns):
+            bl_t = min(bl_s + n_columns, sample_data.shape[1])
+            sample_data[:, bl_s:bl_t] = scipy.fftpack.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
 
-    sample_data = abs(sample_data)
+        sample_data = abs(sample_data)
 
-    sample_height = sample_data.shape[0]
-    sample_length = sample_data.shape[1]
+        sample_height = sample_data.shape[0]
+        sample_length = sample_data.shape[1]
 
-    x = 0
-    sample_start = 0
-    while x < sample_length:
-        total = 0
-        for y in range(0, sample_height):
-            total += sample_data[y][x]
-        if total >= 1:
-            sample_start = x
-            break
-        x += 1
-    sample_start += 5 # The first few frames seem to get modified, perhaps down to compression?
+        x = 0
+        sample_start = 0
+        while x < sample_length:
+            total = 0
+            for y in range(0, sample_height):
+                total += sample_data[y][x]
+            if total >= 1:
+                sample_start = x
+                break
+            x += 1
+        sample_start += 5 # The first few frames seem to get modified, perhaps down to compression?
 
-    sample_length = (sample_length - sample_start - 2)
+        sample_length = (sample_length - sample_start - 2)
 
-    samples.append([
-            sample_start,
-            sample_length,
-            os.path.basename(sample_path),
-            sample_data
-        ])
+        samples.append([
+                sample_start,
+                sample_length,
+                os.path.basename(sample_path),
+                sample_data
+            ])
 
-    print('  {} ({}/{})'.format(sample_path, sample_start, sample_length))
+        print('  {} ({}/{})'.format(sample_path, sample_start, sample_length))
 
 #--------------------------------------------------
 # Processing
@@ -214,6 +218,8 @@ print('    From {} to {}'.format(((float(source_frame_start) * hop_length) / sam
 
 matching = {}
 match_count = 0
+match_last_time = None
+match_last_ignored = False
 matches = []
 
 results_end = {}
@@ -255,7 +261,9 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
                     print('    Match {}/{}: Complete at {} @ {}'.format(matching_id, sample_id, sample_x, match_start_time))
                     results_end[sample_id][sample_x] += 1
                     del matching[matching_id]
-                    matches.append([sample_id, match_start_time])
+                    match_last_ignored = True if ((match_last_time != None) and ((match_start_time - match_last_time) < meta_ignore)) else False
+                    match_last_time = match_start_time;
+                    matches.append([sample_id, match_start_time, match_last_ignored])
                     matching_complete.append(sample_id)
                 else:
                     print('    Match {}/{}: Update to {} ({} < {})'.format(matching_id, sample_id, sample_x, hz_score, hz_min_score))
@@ -304,7 +312,7 @@ for block_start in range(source_frame_start, source_frame_end, n_columns): # Tim
 print('')
 print('Matches')
 for match in matches:
-    print(' {} = {} @ {}'.format(match[0], str(datetime.timedelta(seconds=match[1])), match[1]))
+    print(' {} = {} @ {}{}'.format(match[0], str(datetime.timedelta(seconds=match[1])), match[1], (' - Ignored' if match[2] else '')))
 
 if meta_title != None:
 
@@ -332,19 +340,20 @@ if meta_title != None:
     last_time = 0
     last_sample = 'N/A'
     for match in matches:
-        k += 1
-        end_time = int(round(match[1]))
-        f.write('[CHAPTER]\n')
-        f.write('TIMEBASE=1/1000\n')
-        f.write('START=' + str(last_time * 1000) + '\n')
-        f.write('END=' + str(end_time * 1000) + '\n')
-        f.write('title=Chapter ' + str(k) + '\n')
-        f.write('#human-start=' + str(str(datetime.timedelta(seconds=last_time))) + '\n')
-        f.write('#human-end=' + str(str(datetime.timedelta(seconds=end_time))) + '\n')
-        f.write('#sample=' + str(last_sample) + '\n')
-        f.write('\n')
-        last_time = end_time
-        last_sample = samples[match[0]][2]
+        if match[2] == False: # Not ignored
+            k += 1
+            end_time = int(round(match[1]))
+            f.write('[CHAPTER]\n')
+            f.write('TIMEBASE=1/1000\n')
+            f.write('START=' + str(last_time * 1000) + '\n')
+            f.write('END=' + str(end_time * 1000) + '\n')
+            f.write('title=Chapter ' + str(k) + '\n')
+            f.write('#human-start=' + str(str(datetime.timedelta(seconds=last_time))) + '\n')
+            f.write('#human-end=' + str(str(datetime.timedelta(seconds=end_time))) + '\n')
+            f.write('#sample=' + str(last_sample) + '\n')
+            f.write('\n')
+            last_time = end_time
+            last_sample = samples[match[0]][2]
     if last_time > 0:
         k += 1
         end_time = int(round((float(source_frame_end) * hop_length) / sample_rate))
