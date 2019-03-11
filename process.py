@@ -23,6 +23,7 @@ hop_length = int(win_length // 4)
 sample_rate = 22050
 
 match_any_sample = True
+start_time = datetime.datetime.now()
 
 #--------------------------------------------------
 
@@ -374,3 +375,8 @@ if meta_title != None:
     devnull = open(os.devnull)
     proc = subprocess.Popen(['ffmpeg', '-i', source_path, '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdin=devnull, stdout=devnull, stderr=devnull)
     devnull.close()
+
+#--------------------------------------------------
+
+print('')
+print(datetime.datetime.now() - start_time)
