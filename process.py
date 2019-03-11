@@ -340,9 +340,12 @@ if meta_title != None:
     last_time = 0
     last_sample = 'N/A'
     for match in matches:
-        if match[2] == False: # Not ignored
+        end_time = int(round(match[1]))
+        if match[2] == True: # Not ignored
+            f.write('#ignored=' + str(end_time * 1000) + ' (' + str(str(datetime.timedelta(seconds=end_time))) + ')\n')
+            f.write('\n')
+        else:
             k += 1
-            end_time = int(round(match[1]))
             f.write('[CHAPTER]\n')
             f.write('TIMEBASE=1/1000\n')
             f.write('START=' + str(last_time * 1000) + '\n')
