@@ -245,6 +245,7 @@ if meta_title != None:
                     f.write(' (+' + str(results_dupe[sample_id][k]) + ')')
             f.write('\n')
         f.write('\n')
+    f.close()
 
     f = open(meta_path, 'w')
     f.write(';FFMETADATA1\n')
