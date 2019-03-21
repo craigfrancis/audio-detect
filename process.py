@@ -106,16 +106,16 @@ for sample_path in files:
             x += 1
         sample_start += sample_crop_start # The first few frames seem to get modified, perhaps due to compression?
 
-        sample_length = (sample_length - sample_start - sample_crop_end)
+        sample_length = (sample_length - sample_crop_end)
 
         samples.append([
                 sample_start,
-                sample_length,
+                sample_end,
                 os.path.basename(sample_path),
                 sample_data
             ])
 
-        print('  {} ({}/{})'.format(sample_path, sample_start, sample_length))
+        print('  {} ({}/{})'.format(sample_path, sample_start, sample_end))
 
 #--------------------------------------------------
 # Processing
