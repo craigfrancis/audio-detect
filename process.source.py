@@ -74,11 +74,11 @@ def stft_raw(series, sample_rate, win_length, hop_length, hz_count, dtype):
     # Window the time series.
 
         # Compute the number of frames that will fit. The end may get truncated.
-    n_frames = 1 + int((len(series) - n_fft) / hop_length) # Where n_fft = frame_length
+    frame_count = 1 + int((len(series) - n_fft) / hop_length) # Where n_fft = frame_length
 
         # Vertical stride is one sample
         # Horizontal stride is `hop_length` samples
-    series_frames = np.lib.stride_tricks.as_strided(series, shape=(n_fft, n_frames), strides=(series.itemsize, hop_length * series.itemsize))
+    frames_data = np.lib.stride_tricks.as_strided(series, shape=(n_fft, frame_count), strides=(series.itemsize, hop_length * series.itemsize))
 
     #--------------------------------------------------
     # how many columns can we fit within MAX_MEM_BLOCK
@@ -89,4 +89,4 @@ def stft_raw(series, sample_rate, win_length, hop_length, hz_count, dtype):
     #--------------------------------------------------
     # Return
 
-    return (series_frames, fft_window, n_columns)
+    return (frames_data, fft_window, n_columns)
