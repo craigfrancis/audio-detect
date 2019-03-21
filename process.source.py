@@ -9,6 +9,8 @@ win_length = n_fft
 hop_length = int(win_length // 4)
 # hop_length = 64
 sample_rate = 22050
+sample_crop_start = 3
+sample_crop_end = 2
 
 match_any_sample = True
 

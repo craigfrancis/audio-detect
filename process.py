@@ -104,9 +104,9 @@ for sample_path in files:
                 sample_start = x
                 break
             x += 1
-        sample_start += 5 # The first few frames seem to get modified, perhaps down to compression?
+        sample_start += sample_crop_start # The first few frames seem to get modified, perhaps due to compression?
 
-        sample_length = (sample_length - sample_start - 2)
+        sample_length = (sample_length - sample_start - sample_crop_end)
 
         samples.append([
                 sample_start,

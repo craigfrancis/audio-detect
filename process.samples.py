@@ -36,22 +36,14 @@ else:
 for sample_path in files:
     if os.path.isfile(sample_path):
 
-        sample_path_split = os.path.split(sample_path)
-        sample_ext_split = os.path.splitext(sample_path_split[1])
-        sample_image_path = sample_path_split[0] + '/img/' + sample_ext_split[0] + '.png'
-
         sample_series = pcm_data(sample_path, sample_rate)
 
-        sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
-
-        if sample_max_length < sample_frames.shape[1]:
-            sample_max_length = sample_frames.shape[1]
+        if sample_max_length < sample_series.shape[0]:
+            sample_max_length = sample_series.shape[0]
 
         samples.append([
-                sample_image_path,
-                sample_frames,
-                fft_window,
-                n_columns
+                sample_path,
+                sample_series,
             ])
 
 #--------------------------------------------------
@@ -62,31 +54,84 @@ print('')
 
 for sample_id, sample_info in enumerate(samples):
 
-    sample_image_path = sample_info[0]
-    sample_frames = sample_info[1]
-    fft_window = sample_info[2]
-    n_columns = sample_info[3]
+    #--------------------------------------------------
+    # Config
 
-    sample_length = sample_frames.shape[1]
+    sample_path = sample_info[0]
+    sample_series = sample_info[1]
 
-    if sample_max_length > sample_length:
-        empty_frames = np.full((n_fft, (sample_max_length - sample_length)), 0)
-        sample_frames = np.concatenate((sample_frames, empty_frames), axis=1)
+    sample_path_split = os.path.split(sample_path)
+    sample_ext_split = os.path.splitext(sample_path_split[1])
+    sample_image_path = sample_path_split[0] + '/img/' + sample_ext_split[0] + '.png'
+
+    #--------------------------------------------------
+    # All samples the same length
+
+    series_length = sample_series.shape[0]
+    if sample_max_length > series_length:
+        empty_series = np.full((sample_max_length - series_length), 0)
+        sample_series = np.concatenate((sample_series, empty_series), axis=0)
+
+    #--------------------------------------------------
+    # Harmonic and percussive components
+
+    y_harm, y_perc = librosa.effects.hpss(sample_series)
+
+    #--------------------------------------------------
+    # STFT data
+
+    sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
 
     # Pre-allocate the STFT matrix
-    sample_data = np.empty((int(1 + n_fft // 2), sample_max_length), dtype=dtype, order='F')
+    sample_data = np.empty((int(1 + n_fft // 2), sample_frames.shape[1]), dtype=dtype, order='F')
 
-    for bl_s in range(0, sample_max_length, n_columns):
-        bl_t = min(bl_s + n_columns, sample_max_length)
+    for bl_s in range(0, sample_data.shape[1], n_columns):
+        bl_t = min(bl_s + n_columns, sample_data.shape[1])
         sample_data[:, bl_s:bl_t] = scipy.fftpack.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
 
     sample_data = abs(sample_data)
 
-    plt.figure(figsize=(5, 4))
+    sample_height = sample_data.shape[0]
+    sample_length = sample_data.shape[1]
+
+    #--------------------------------------------------
+    # Start
+
+    x = 0
+    sample_start = 0
+    while x < sample_length:
+        total = 0
+        for y in range(0, sample_height):
+            total += sample_data[y][x]
+        if total >= 1:
+            sample_start = x
+            break
+        x += 1
+    sample_start += sample_crop_start # The first few frames seem to get modified, perhaps down to compression?
+    sample_start = ((float(sample_start) * hop_length) / sample_rate);
+
+    #--------------------------------------------------
+    # Plot
+
+    plt.figure(figsize=(5, 6))
+
+    plt.subplot(2, 1, 1)
+    librosa.display.waveplot(y_harm, sr=sample_rate, alpha=0.25)
+    librosa.display.waveplot(y_perc, sr=sample_rate, color='r', alpha=0.5)
+    plt.axvline(x=sample_start)
+    plt.tight_layout()
+
+    plt.subplot(2, 1, 2)
     librosa.display.specshow(sample_data, sr=sample_rate, x_axis='time', y_axis='log', cmap='Reds')
+    plt.axvline(x=sample_start)
+    plt.tight_layout()
+
     plt.savefig(sample_image_path)
 
-    print('  {} - {}'.format(sample_image_path, sample_length))
+    #--------------------------------------------------
+    # Done
+
+    print('  {} - {}'.format(sample_ext_split[0], series_length))
 
 #--------------------------------------------------
 
