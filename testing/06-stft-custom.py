@@ -143,11 +143,11 @@ source_series = np.pad(source_series, int(n_fft // 2), mode=pad_mode)
 print('Window time series')
 
 # Compute the number of frames that will fit. The end may get truncated.
-n_frames = 1 + int((len(source_series) - n_fft) / hop_length) # Where n_fft = frame_length
+frame_count = 1 + int((len(source_series) - n_fft) / hop_length) # Where n_fft = frame_length
 
 # Vertical stride is one sample
 # Horizontal stride is `hop_length` samples
-source_series_frames = np.lib.stride_tricks.as_strided(source_series, shape=(n_fft, n_frames), strides=(source_series.itemsize, hop_length * source_series.itemsize))
+source_series_frames = np.lib.stride_tricks.as_strided(source_series, shape=(n_fft, frame_count), strides=(source_series.itemsize, hop_length * source_series.itemsize))
 source_series_frame_count = source_series_frames.shape[1]
 
 source_series_hz_count = int(1 + n_fft // 2) # 1025 (Hz buckets)
