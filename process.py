@@ -12,7 +12,7 @@ import scipy
 import scipy.signal
 import datetime
 
-execfile('./process.source.py')
+execfile(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py')
 
 #--------------------------------------------------
 
