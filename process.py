@@ -208,7 +208,7 @@ for block_start in range(config['source_frame_start'], config['source_frame_end'
                     print('    Match {}/{}: Update to {} ({} < {})'.format(matching_id, sample_id, sample_x, hz_score, config['matching_min_score']))
                     matching[matching_id][1] = sample_x
 
-            elif matching[matching_id][2] < sample_warn_allowance:
+            elif matching[matching_id][2] < sample_warn_allowance and sample_x > 10:
 
                 print('    Match {}/{}: Warned at {} of {} ({} > {})'.format(matching_id, sample_id, sample_x, samples[sample_id][1], hz_score, config['matching_min_score']))
                 matching[matching_id][2] += 1
@@ -262,7 +262,7 @@ for block_start in range(config['source_frame_start'], config['source_frame_end'
 print('')
 print('Matches')
 for match in matches:
-    print(' {} = {} @ {}{}'.format(match[0], str(datetime.timedelta(seconds=match[1])), match[1], (' - Ignored' if match[2] else '')))
+    print(' {} = {} @ {}{}'.format(samples[match[0]][2], str(datetime.timedelta(seconds=match[1])), match[1], (' - Ignored' if match[2] else '')))
 
 if config['output_title'] != None:
 
@@ -274,7 +274,11 @@ if config['output_title'] != None:
     f = open(results_path, 'w')
     for sample_id, sample_info in enumerate(samples):
         for k in range(0, (sample_info[1] + 1)):
-            f.write('  ' + str(sample_id) + ' | ' + str(sample_info[2]) + ' | ' + str(k) + ':')
+            f.write('  ' + str(sample_id) + ' | ' + str(sample_info[2]) + ' | ' + str(k))
+            if k == sample_info[1]:
+                f.write(' | L: ')
+            else:
+                f.write(' | P: ')
             if results_end[sample_id][k] > 0 or results_dupe[sample_id][k] > 0:
                 f.write(' ' + str(results_end[sample_id][k]))
                 if results_dupe[sample_id][k] > 0:

@@ -9,6 +9,7 @@ import scipy
 import scipy.signal
 import matplotlib.pyplot as plt
 import librosa.display
+import re
 
 execfile(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py')
 
@@ -116,8 +117,8 @@ for sample_id, sample_info in enumerate(samples):
     stft_crop_start += sample_crop_start
     stft_crop_end = (stft_length_source - sample_crop_end)
 
-    stft_crop_start_time = ((float(stft_crop_start) * hop_length) / sample_rate);
-    stft_crop_end_time = ((float(stft_crop_end) * hop_length) / sample_rate);
+    stft_crop_start_time = ((float(stft_crop_start) * hop_length) / sample_rate)
+    stft_crop_end_time = ((float(stft_crop_end) * hop_length) / sample_rate)
 
     #--------------------------------------------------
     # Plot
@@ -140,11 +141,26 @@ for sample_id, sample_info in enumerate(samples):
     plt.savefig(sample_path_split[0] + '/img/' + sample_ext_split[0] + '.png')
 
     #--------------------------------------------------
-    # Length
+    # Details
 
-    f = open(sample_path_split[0] + '/info/' + sample_ext_split[0] + '.txt', 'w')
-    f.write(str(stft_crop_start) + ' ' + str(stft_crop_end) + ' ' + str(series_length) + '\n')
-    f.close()
+    details = {}
+    detail_path = sample_path_split[0] + '/info/' + sample_ext_split[0] + '.txt';
+
+    if os.path.exists(detail_path):
+        p = re.compile('([^:]+): *(.*)')
+        f = open(detail_path, 'r')
+        for line in f:
+            m = p.match(line)
+            if m:
+                details[m.group(1)] = m.group(2)
+
+    details['crop_start'] = str(stft_crop_start)
+    details['crop_end'] = str(stft_crop_end)
+    details['length_series'] = str(series_length)
+
+    f = open(detail_path, 'w')
+    for field in sorted(details.iterkeys()):
+        f.write(field + ': ' + details[field] + '\n')
 
     #--------------------------------------------------
     # Done
