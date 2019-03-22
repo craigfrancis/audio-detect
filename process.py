@@ -67,7 +67,7 @@ print('Load Samples')
 samples = []
 
 if not os.path.exists(config['matching_samples']):
-    print('Missing samples folder')
+    print('Missing samples folder: ' + config['matching_samples'])
     sys.exit()
 
 if os.path.isdir(config['matching_samples']):

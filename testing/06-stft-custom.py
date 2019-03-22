@@ -61,7 +61,7 @@ print('Load Samples')
 samples = []
 
 if not os.path.exists(samples_folder):
-    print('Missing samples folder')
+    print('Missing samples folder: ' + samples_folder)
     sys.exit()
 
 files = glob.glob(samples_folder + '/*')

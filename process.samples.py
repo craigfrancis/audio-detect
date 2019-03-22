@@ -21,7 +21,7 @@ if len(sys.argv) == 2:
     samples_folder = sys.argv[1]
 
 if not os.path.exists(samples_folder):
-    print('Missing samples folder')
+    print('Missing samples folder: ' + samples_folder)
     sys.exit()
 
 #--------------------------------------------------
