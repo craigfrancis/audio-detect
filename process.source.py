@@ -7,10 +7,10 @@ n_fft=2048
 hz_count = int(1 + n_fft // 2) # 1025 (Hz buckets)
 win_length = n_fft
 hop_length = int(win_length // 4)
-# hop_length = 64
 sample_rate = 22050
 sample_crop_start = 3
 sample_crop_end = 2
+sample_warn_allowance = 3
 
 match_any_sample = True
 
