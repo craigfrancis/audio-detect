@@ -11,7 +11,11 @@ import matplotlib.pyplot as plt
 import librosa.display
 import re
 
-execfile(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py')
+#--------------------------------------------------
+
+filename = os.path.dirname(os.path.realpath(__file__)) + '/process.source.py';
+
+exec(open(filename).read())
 
 #--------------------------------------------------
 
@@ -159,7 +163,7 @@ for sample_id, sample_info in enumerate(samples):
     details['length_series'] = str(series_length)
 
     f = open(detail_path, 'w')
-    for field in sorted(details.iterkeys()):
+    for field in sorted(iter(details.keys())):
         f.write(field + ': ' + details[field] + '\n')
 
     #--------------------------------------------------

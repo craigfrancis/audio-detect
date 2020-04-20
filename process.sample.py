@@ -45,4 +45,4 @@ f.close()
 
 samples_script = os.path.dirname(os.path.realpath(__file__)) + '/process.samples.py'
 
-subprocess.call(['python', samples_script, samples_folder])
+subprocess.call(['python3', samples_script, samples_folder])
