@@ -1,0 +1,6 @@
+crop_end: 29
+crop_start: 8
+length_seconds: 0.7
+length_series: 15864
+source: ./example/source.mp3
+timestamp: 1.59
