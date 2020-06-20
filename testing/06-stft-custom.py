@@ -176,7 +176,7 @@ for block_start in range(0, source_series_frame_count, n_columns): # Time in 31 
 
     block_end = min(block_start + n_columns, source_series_frame_count)
 
-    set_data = abs((scipy.fftpack.fft(fft_window * source_series_frames[:, block_start:block_end], axis=0)).astype(dtype))
+    set_data = abs((scipy.fft(fft_window * source_series_frames[:, block_start:block_end], axis=0)).astype(dtype))
 
     print('  {} to {}'.format(block_start, block_end))
 
