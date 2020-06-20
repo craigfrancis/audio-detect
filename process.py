@@ -87,7 +87,7 @@ for sample_path in files:
 
         for bl_s in range(0, sample_data.shape[1], n_columns):
             bl_t = min(bl_s + n_columns, sample_data.shape[1])
-            sample_data[:, bl_s:bl_t] = scipy.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
+            sample_data[:, bl_s:bl_t] = scipy.fft.fft(fft_window * sample_frames[:, bl_s:bl_t], axis=0)[:sample_data.shape[0]]
 
         sample_data = abs(sample_data)
 
@@ -149,7 +149,7 @@ for block_start in range(config['source_frame_start'], config['source_frame_end'
 
     block_end = min(block_start + n_columns, config['source_frame_end'])
 
-    set_data = abs((scipy.fft(fft_window * source_frames[:, block_start:block_end], axis=0)).astype(dtype))
+    set_data = abs((scipy.fft.fft(fft_window * source_frames[:, block_start:block_end], axis=0)).astype(dtype))
 
     print('  {} to {} - {}'.format(block_start, block_end, str(datetime.timedelta(seconds=((float(block_start) * hop_length) / sample_rate)))))
 
