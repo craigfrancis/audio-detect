@@ -12,7 +12,7 @@ import scipy
 import scipy.signal
 import datetime
 
-execfile(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py')
+exec(open(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py').read())
 
 #--------------------------------------------------
 
@@ -34,7 +34,7 @@ config = {
 if len(sys.argv) >= 2:
     config_path = sys.argv[1]
     if config_path != None:
-        execfile(config_path)
+        exec(open(config_path).read())
 
 if len(sys.argv) >= 3:
     config['source_path'] = sys.argv[2]
