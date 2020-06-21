@@ -9,8 +9,11 @@ Otherwise known as Audio Event Detection.
 
 While the main script only really needs `scipy` and `numpy`, installing these two packages will give you those dependencies and support the script that does the visualisations:
 
-    pip install --user matplotlib
-    pip install --user librosa
+    pip install -r requirements.txt
+
+    # Or to install manually:
+    #   pip install --user matplotlib
+    #   pip install --user librosa
 
 Simply run the `process.py` script:
 
