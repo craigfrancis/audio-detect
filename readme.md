@@ -7,7 +7,7 @@ Otherwise known as Audio Event Detection.
 
 ---
 
-While the main script only really needs `scipy` and `numpy`, installing these two packages will give you those dependencies and support the script that does the visualisations:
+While the main script only really needs `scipy` and `numpy`; using the `requirements.txt` file will give you those dependencies and support the script that does visualisations:
 
     pip install -r requirements.txt
 
