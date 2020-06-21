@@ -11,11 +11,7 @@ While the main script only really needs `scipy` and `numpy`, installing these tw
 
     pip install -r requirements.txt
 
-    # Or to install manually:
-    #   pip install --user matplotlib
-    #   pip install --user librosa
-
-Simply run the `process.py` script:
+Then simply run the `process.py` script:
 
     python ./process.py ./example/config.py ./example/source.mp3;
 
