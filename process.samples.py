@@ -98,7 +98,7 @@ for sample_id, sample_info in enumerate(samples):
 
     for bl_s in range(0, stft_data.shape[1], n_columns):
         bl_t = min(bl_s + n_columns, stft_data.shape[1])
-        stft_data[:, bl_s:bl_t] = scipy.fftpack.fft(fft_window * stft_frames[:, bl_s:bl_t], axis=0)[:stft_data.shape[0]]
+        stft_data[:, bl_s:bl_t] = scipy.fft.fft(fft_window * stft_frames[:, bl_s:bl_t], axis=0)[:stft_data.shape[0]]
 
     stft_data = abs(stft_data)
 
