@@ -9,11 +9,11 @@ Otherwise known as Audio Event Detection.
 
 While the main script only really needs `scipy` and `numpy`; using the `requirements.txt` file will give you those dependencies and support the script that does visualisations:
 
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
 
 Then simply run the `process.py` script:
 
-    python ./process.py ./example/config.py ./example/source.mp3;
+    python3 ./process.py ./example/config.py ./example/source.mp3;
 
 The `config.py` file allows you to configure this - e.g. where the sample file(s) are specified.
 
@@ -33,9 +33,9 @@ If you want this data to be put in files, look at the 'output_title' config vari
 
 To create sample files, as in the small sound you are trying to find, run:
 
-    python ./process.sample.py ./example/samples/ ./example/source.mp3 1 0.7 "1.59";
+    python3 ./process.sample.py ./example/samples/ ./example/source.mp3 1 0.7 "1.59";
 
-    python ./process.sample.py ./example/samples/ ./example/source.mp3 2 0.7 "4.08";
+    python3 ./process.sample.py ./example/samples/ ./example/source.mp3 2 0.7 "4.08";
 
 Arguments:
 
