@@ -7,6 +7,11 @@ Otherwise known as Audio Event Detection.
 
 ---
 
+While the main script only really needs `scipy` and `numpy`, installing these two packages will give you those dependencies and support the script that does the visualisations:
+
+    pip install --user matplotlib
+    pip install --user librosa
+
 Simply run the `process.py` script:
 
     python ./process.py ./example/config.py ./example/source.mp3;
