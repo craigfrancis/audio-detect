@@ -12,17 +12,19 @@ import scipy
 import scipy.signal
 import datetime
 
-exec(open(os.path.dirname(os.path.realpath(__file__)) + '/process.source.py').read())
+exec(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'process.source.py')).read())
 
 #--------------------------------------------------
 
 config = {
 
-        'source_path':        './testing/source-64.mp3',
+        'ffmpeg_path':        'ffmpeg', # On Windows, you will probably need this to be \path\to\ffmpeg.exe
+
+        'source_path':        os.path.join('testing', 'source-64.mp3'),
         'source_frame_start': 0,    # (x * sample_rate) / hop_length)
         'source_frame_end':   None, # (x * sample_rate) / hop_length)
 
-        'matching_samples':   './testing/06-stft-custom/sample-1a.mp3',
+        'matching_samples':   os.path.join('testing', '06-stft-custom', 'sample-1a.mp3'),
         'matching_min_score': 0.15,
         'matching_skip':      0,    # Jump forward X seconds after a match.
         'matching_ignore':    0,    # Ignore additional matches X seconds after the last one.
@@ -71,7 +73,7 @@ if not os.path.exists(config['matching_samples']):
     sys.exit()
 
 if os.path.isdir(config['matching_samples']):
-    files = sorted(glob.glob(config['matching_samples'] + '/*'))
+    files = sorted(glob.glob(os.path.join(config['matching_samples'], '*')))
 else:
     files = [config['matching_samples']]
 
@@ -327,7 +329,7 @@ if config['output_title'] != None:
     f.close()
 
     devnull = open(os.devnull)
-    proc = subprocess.Popen(['ffmpeg', '-i', config['source_path'], '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdin=devnull, stdout=devnull, stderr=devnull)
+    proc = subprocess.Popen([config['ffmpeg_path'], '-i', config['source_path'], '-i', meta_path, '-map_metadata', '1', '-codec', 'copy', '-y', chapter_path], stdin=devnull, stdout=devnull, stderr=devnull)
     devnull.close()
 
 #--------------------------------------------------

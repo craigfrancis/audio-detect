@@ -13,13 +13,13 @@ import re
 
 #--------------------------------------------------
 
-filename = os.path.dirname(os.path.realpath(__file__)) + '/process.source.py';
+filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'process.source.py');
 
 exec(open(filename).read())
 
 #--------------------------------------------------
 
-samples_folder = './samples'
+samples_folder = 'samples'
 
 if len(sys.argv) == 2:
     samples_folder = sys.argv[1]
@@ -34,7 +34,7 @@ samples = []
 series_max_length = 0
 
 if os.path.isdir(samples_folder):
-    files = sorted(glob.glob(samples_folder + '/*'))
+    files = sorted(glob.glob(os.path.join(samples_folder, '*')))
 else:
     files = [samples_folder]
 
@@ -142,13 +142,13 @@ for sample_id, sample_info in enumerate(samples):
     plt.axvline(x=stft_crop_end_time)
     plt.tight_layout()
 
-    plt.savefig(sample_path_split[0] + '/img/' + sample_ext_split[0] + '.png')
+    plt.savefig(os.path.join(sample_path_split[0], 'img', sample_ext_split[0] + '.png'))
 
     #--------------------------------------------------
     # Details
 
     details = {}
-    detail_path = sample_path_split[0] + '/info/' + sample_ext_split[0] + '.txt';
+    detail_path = os.path.join(sample_path_split[0], 'info', sample_ext_split[0] + '.txt');
 
     if os.path.exists(detail_path):
         p = re.compile('([^:]+): *(.*)')

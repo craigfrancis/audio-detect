@@ -1,4 +1,6 @@
 
+# config['ffmpeg_path']        = 'ffmpeg', # On Windows, you will probably need this to be \path\to\ffmpeg.exe
+
 # config['source_path']        = './example/source.mp3';
 
 config['source_frame_start'] = 0;    # (x * sample_rate) / hop_length)
