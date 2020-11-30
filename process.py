@@ -5,7 +5,6 @@
 
 import sys
 import os
-import glob
 import subprocess
 import numpy as np
 import scipy
@@ -73,7 +72,6 @@ if not os.path.exists(config['matching_samples']):
     sys.exit()
 
 if os.path.isdir(config['matching_samples']):
-    # files = glob.glob(os.path.join(config['matching_samples'], '*')) - Returns folders as well
     files = [];
     for path in os.listdir(config['matching_samples']):
         path = os.path.join(config['matching_samples'], path)
