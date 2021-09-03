@@ -27,6 +27,10 @@ def pcm_data(path, sample_rate):
     scale = 1./float(1 << ((8 * 2) - 1))
     y = scale * np.frombuffer(proc.stdout.read(), '<i2').astype(np.float32)
 
+    if y.size == 0:
+        print('  Missing data from Audio file "{}" via "{}".'.format(path, ffmpeg_path))
+        sys.exit()
+
     return y
 
 #--------------------------------------------------
