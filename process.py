@@ -75,7 +75,7 @@ if os.path.isdir(config['matching_samples']):
     files = [];
     for path in os.listdir(config['matching_samples']):
         path = os.path.join(config['matching_samples'], path)
-        if os.path.isfile(path):
+        if os.path.isfile(path) and not os.path.basename(path).startswith('.'):
             files.append(path)
     files = sorted(files)
 else:
