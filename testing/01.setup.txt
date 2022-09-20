@@ -1,6 +1,6 @@
 
-pip install --user matplotlib
 pip install --user librosa
+pip install --user matplotlib
 
 On MacOS 10.14, the pre-installed packages caused a problem with "six", this worked around it:
 
