@@ -1,4 +1,4 @@
-crop_end: 28
+crop_end: 26
 crop_start: 7
 length_seconds: 0.7
 length_series: 15288
