@@ -130,8 +130,8 @@ for sample_id, sample_info in enumerate(samples):
     plt.figure(figsize=(5, 6))
 
     plt.subplot(2, 1, 1)
-    librosa.display.waveplot(series_harm, sr=sample_rate, alpha=0.25)
-    librosa.display.waveplot(series_perc, sr=sample_rate, color='r', alpha=0.5)
+    librosa.display.waveshow(series_harm, sr=sample_rate, alpha=0.25)
+    librosa.display.waveshow(series_perc, sr=sample_rate, color='r', alpha=0.5)
     plt.axvline(x=stft_crop_start_time)
     plt.axvline(x=stft_crop_end_time)
     plt.tight_layout()

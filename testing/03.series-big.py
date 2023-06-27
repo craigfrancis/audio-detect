@@ -73,16 +73,16 @@ sample_series, sample_rate = librosa.load(sample_path)
 
 #--------------------------------------------------
 
-print('Save waveplot')
+print('Save waveshow')
 
 plt.figure()
 plt.subplot(3, 1, 1)
-librosa.display.waveplot(source_series, sr=source_rate)
+librosa.display.waveshow(source_series, sr=source_rate)
 plt.savefig('03.series-big/source.png')
 
 plt.figure()
 plt.subplot(3, 1, 1)
-librosa.display.waveplot(sample_series, sr=sample_rate)
+librosa.display.waveshow(sample_series, sr=sample_rate)
 plt.savefig('03.series-big/sample-' + sample_id + '.png')
 
 #--------------------------------------------------
