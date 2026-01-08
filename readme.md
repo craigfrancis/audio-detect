@@ -7,7 +7,7 @@ Otherwise known as Audio Event Detection.
 
 ---
 
-While the main script only really needs `scipy` and `numpy`; using the `requirements.txt` file will give you those dependencies and support the script that does visualisations:
+While the main script only really needs `scipy` and `numpy`; using the `requirements.txt` file will give you those dependencies and support the script that does visualisations (or, see "Python Virtual Environment" below):
 
     pip3 install -r requirements.txt
 
@@ -70,3 +70,18 @@ Rather than processing the whole file, then comparing via STFT (uses a lot of me
 While identifying sound effects can be useful, so can the process of identifying who is talking:
 
 https://github.com/ppwwyyxx/speaker-recognition
+
+---
+
+## Python Virtual Environment
+
+If you get the error "This environment is externally managed", then try:
+
+	apt install python3-venv
+	cd /my-path/;
+	python3 -m venv audio-detect
+	source audio-detect/bin/activate
+	pip3 install -r /path/to/requirements.txt
+	deactivate
+
+	python3 /my-path/audio-detect/process.py ./example/config.py ./example/source.mp3;
