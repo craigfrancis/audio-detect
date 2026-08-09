@@ -174,21 +174,6 @@ for block_start in range(config['source_frame_start'], config['source_frame_end'
 
 # TEST-2... this is the main test (done after the first frame has been matched with TEST-1)
 
-              ###
-              # While this does not work, maybe we could try something like this?
-              #
-              #     match_min_score = (0 - config['matching_min_score']);
-              #
-              #     hz_score = (set_data[0:hz_count,x] - samples[sample_id][3][0:hz_count,sample_x])
-              #     hz_score = (hz_score < match_min_score).sum()
-              #
-              #     if hz_score < 5:
-              #
-              ###
-              # Correlation might work better, but I've no idea how to use it.
-              #   np.correlate(set_data[0:hz_count,x], sample_info[3][0:hz_count,sample_start])[0]
-              ###
-
             # Return a list of Hz buckets for this frame (set_data[0-1025][x]),
             # This is where `hz_score` starts as a simple array, using a column of results at time position `x`.
             # Subtract them all from the equivalent Hz bucket from sample_start (frame 0, ish)
