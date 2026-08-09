@@ -11,11 +11,7 @@ import matplotlib.pyplot as plt
 import librosa.display
 import re
 
-#--------------------------------------------------
-
-filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'process.source.py');
-
-exec(open(filename).read())
+exec(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'process.source.py')).read())
 
 #--------------------------------------------------
 
