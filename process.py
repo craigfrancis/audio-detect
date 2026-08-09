@@ -100,16 +100,9 @@ for sample_path in files:
         sample_height = sample_data.shape[0]
         sample_length = sample_data.shape[1]
 
-        x = 0
-        sample_start = 0
-        while x < sample_length:
-            total = 0
-            for y in range(0, sample_height):
-                total += sample_data[y][x]
-            if total >= 1:
-                sample_start = x
-                break
-            x += 1
+        col_sums = sample_data.sum(axis=0)
+        nonzero_cols = np.nonzero(col_sums >= 1)[0]
+        sample_start = int(nonzero_cols[0]) if len(nonzero_cols) else 0
         sample_start += sample_crop_start # The first few frames seem to get modified, perhaps due to compression?
         sample_end = (sample_length - sample_crop_end)
 
