@@ -2,8 +2,6 @@
 
 # np.set_printoptions(threshold=np.nan)
 
-ffmpeg_path = 'ffmpeg' # On Windows, you will probably need this to be \path\to\ffmpeg.exe
-
 dtype = np.complex64
 n_fft=2048
 hz_count = int(1 + n_fft // 2) # 1025 (Hz buckets)
@@ -18,7 +16,7 @@ match_any_sample = True
 
 #--------------------------------------------------
 
-def pcm_data(path, sample_rate):
+def pcm_data(ffmpeg_path, path, sample_rate):
 
     devnull = open(os.devnull)
     proc = subprocess.Popen([ffmpeg_path, '-i', path, '-f', 's16le', '-ac', '1', '-ar', str(sample_rate), '-'], stdout=subprocess.PIPE, stderr=devnull)

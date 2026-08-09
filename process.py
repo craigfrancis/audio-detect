@@ -55,7 +55,7 @@ if not os.path.exists(config['source_path']):
     print('Missing source file')
     sys.exit()
 
-source_series = pcm_data(config['source_path'], sample_rate)
+source_series = pcm_data(config['ffmpeg_path'], config['source_path'], sample_rate)
 
 source_time_total = (float(len(source_series)) / sample_rate)
 
@@ -84,7 +84,7 @@ else:
 for sample_path in files:
     if os.path.isfile(sample_path):
 
-        sample_series = pcm_data(sample_path, sample_rate)
+        sample_series = pcm_data(config['ffmpeg_path'], sample_path, sample_rate)
 
         sample_frames, fft_window, n_columns = stft_raw(sample_series, sample_rate, win_length, hop_length, hz_count, dtype)
 
