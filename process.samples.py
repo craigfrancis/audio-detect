@@ -13,6 +13,8 @@ import re
 
 exec(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'process.source.py')).read())
 
+ffmpeg_path = 'ffmpeg' # On Windows, you will probably need this to be \path\to\ffmpeg.exe
+
 #--------------------------------------------------
 
 samples_folder = 'samples'
@@ -37,7 +39,7 @@ else:
 for sample_path in files:
     if os.path.isfile(sample_path):
 
-        series_data = pcm_data(sample_path, sample_rate)
+        series_data = pcm_data(ffmpeg_path, sample_path, sample_rate)
 
         if series_max_length < series_data.shape[0]:
             series_max_length = series_data.shape[0]
